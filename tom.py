@@ -52,7 +52,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid_str = str(user.id)
 
     if user.id in data["banned"]:
-        await update.message.reply_text("🚫 *Access Denied!*\nYou are permanently banned from using this bot.", parse_mode='Markdown')
+        await update.message.reply_text(f"🚫 *Access Denied!*\nYou are permanently banned from using this bot.\n\n{BRANDING}", parse_mode='Markdown')
         return
 
     # Check if user is new for Admin Notification
@@ -222,7 +222,7 @@ async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_data(data)
         await update.message.reply_text(f"🚫 User `{target_id}` has been banned.", parse_mode='Markdown')
         try:
-            await context.bot.send_message(chat_id=target_id, text="🚫 *You have been banned by the Admin.*", parse_mode='Markdown')
+            await context.bot.send_message(chat_id=target_id, text=f"🚫 *You have been banned by the Admin.*\n\n{BRANDING}", parse_mode='Markdown')
         except: pass
 
 async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -235,20 +235,21 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_data(data)
         await update.message.reply_text(f"✅ User `{target_id}` has been unbanned.", parse_mode='Markdown')
         try:
-            await context.bot.send_message(chat_id=target_id, text="✅ *You have been unbanned by the Admin. You can use the bot again.*", parse_mode='Markdown')
+            await context.bot.send_message(chat_id=target_id, text=f"✅ *You have been unbanned by the Admin. You can use the bot again.*\n\n{BRANDING}", parse_mode='Markdown')
         except: pass
 
 # --- MAIN INCOMING MESSAGE HANDLER ---
 async def handle_incoming(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
-    # 1. Ban Check
+    # 1. Ban Check (Now sends a message EVERY time they try to type)
     if user.id in data["banned"] and user.id != ADMIN_ID:
+        await update.message.reply_text(f"🚫 *Access Denied!*\nYou are permanently banned from using this bot.\n\n{BRANDING}", parse_mode='Markdown')
         return
 
-    # 2. Maintenance Check
+    # 2. Maintenance Check (Sends a message EVERY time they try to type)
     if data.get("maintenance") and user.id != ADMIN_ID:
-        await update.message.reply_text("🚧 *System is currently under maintenance. Please try again later.*", parse_mode='Markdown')
+        await update.message.reply_text(f"🚧 *System is currently under maintenance. Please try again later.*\n\n{BRANDING}", parse_mode='Markdown')
         return
 
     # Show typing action while processing
