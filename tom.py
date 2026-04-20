@@ -4,6 +4,8 @@ import json
 import re
 import asyncio
 import time
+from threading import Thread
+from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from telegram.constants import ChatAction
@@ -44,6 +46,24 @@ def extract_id(text):
     if not text: return None
     match = re.search(r"ID:\s*(\d+)", text)
     return int(match.group(1)) if match else None
+
+# --- 24/7 KEEP ALIVE SERVER (NEW ADVANCED FEATURE) ---
+web_app = Flask('')
+
+@web_app.route('/')
+def home():
+    # Ye page Render aur Cron-job ko btayega ki bot zinda hai
+    return "🛡️ TOM Core System is Online and Active!"
+
+def run_server():
+    # Render ka port automatically detect karega
+    port = int(os.environ.get('PORT', 8080))
+    web_app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run_server)
+    t.daemon = True # Background thread
+    t.start()
 
 # --- PUBLIC COMMANDS ---
 
@@ -242,12 +262,12 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_incoming(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
-    # 1. Ban Check (Now sends a message EVERY time they try to type)
+    # 1. Ban Check 
     if user.id in data["banned"] and user.id != ADMIN_ID:
         await update.message.reply_text(f"🚫 *Access Denied!*\nYou are permanently banned from using this bot.\n\n{BRANDING}", parse_mode='Markdown')
         return
 
-    # 2. Maintenance Check (Sends a message EVERY time they try to type)
+    # 2. Maintenance Check 
     if data.get("maintenance") and user.id != ADMIN_ID:
         await update.message.reply_text(f"🚧 *System is currently under maintenance. Please try again later.*\n\n{BRANDING}", parse_mode='Markdown')
         return
@@ -307,6 +327,10 @@ def main():
     
     # Message Handler (Must be after commands)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_incoming))
+
+    # START KEEP-ALIVE SERVER (NEW)
+    print("🛡️ Starting Web Server for 24/7 Uptime...")
+    keep_alive()
 
     print("🛡️ TOM Core System is running...")
     app.run_polling()
